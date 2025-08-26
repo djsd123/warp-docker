@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     apt-transport-https \
     ca-certificates \
     x11-apps \
+    x11-utils \
     xauth \
     dbus-x11 \
     libgtk-3-0 \
@@ -35,9 +36,17 @@ RUN apt-get update && apt-get install -y \
     libgbm1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install Warp Terminal
-RUN wget https://releases.warp.dev/linux/v0.2024.10.29.08.02.stable_00/warp-terminal_0.2024.10.29.08.02.stable.00_amd64.deb -O /tmp/warp.deb && \
-    dpkg -i /tmp/warp.deb || apt-get install -f -y && \
+# Download and install Warp Terminal with correct URL and corporate-friendly method
+RUN curl -k -L --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+    -o /tmp/warp.deb \
+    "https://releases.warp.dev/stable/v0.2025.08.20.08.11.stable_03/warp-terminal_0.2025.08.20.08.11.stable.03_amd64.deb" && \
+    echo "Downloaded $(ls -lh /tmp/warp.deb | awk '{print $5}') file" && \
+    file /tmp/warp.deb && \
+    apt-get update && \
+    dpkg -i /tmp/warp.deb || (apt-get install -f -y && dpkg -i /tmp/warp.deb) && \
+    echo "Verifying installation..." && \
+    which warp-terminal && \
+    warp-terminal --version && \
     rm /tmp/warp.deb
 
 # Create a non-root user
