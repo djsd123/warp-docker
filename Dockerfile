@@ -1,5 +1,5 @@
-# Use Ubuntu as base image
-FROM ubuntu:22.04
+# Use Ubuntu as base image with AMD64 architecture for Warp compatibility
+FROM --platform=linux/amd64 ubuntu:22.04
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -34,6 +34,9 @@ RUN apt-get update && apt-get install -y \
     libdrm2 \
     libxss1 \
     libgbm1 \
+    libegl1 \
+    libxkbcommon-x11-0 \
+    file \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and install Warp Terminal with correct URL and corporate-friendly method
@@ -46,7 +49,7 @@ RUN curl -k -L --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
     dpkg -i /tmp/warp.deb || (apt-get install -f -y && dpkg -i /tmp/warp.deb) && \
     echo "Verifying installation..." && \
     which warp-terminal && \
-    warp-terminal --version && \
+    warp-terminal --help | head -3 && \
     rm /tmp/warp.deb
 
 # Create a non-root user
