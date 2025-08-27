@@ -27,40 +27,32 @@ if ! pgrep -f "XQuartz" > /dev/null; then
     sleep 3
 fi
 
-# Get the IP address for Docker to connect to X11
-IP=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}')
-if [ -z "$IP" ]; then
-    # Try with en1 if en0 doesn't have an IP
-    IP=$(ifconfig en1 | grep inet | awk '$1=="inet" {print $2}')
-fi
+# Set up X11 forwarding using host.docker.internal (Docker's standard host reference)
+echo -e "${GREEN}Using host.docker.internal for X11 forwarding${NC}"
 
-if [ -z "$IP" ]; then
-    echo -e "${RED}Could not determine IP address${NC}"
-    exit 1
-fi
+# Allow connections from Docker's host reference
+xhost +${hostname}
 
-echo -e "${GREEN}Using IP address: $IP${NC}"
-
-# Allow connections from localhost to X11
-xhost +$IP
+export HOSTNAME=`hostname`
 
 # Build the Docker image if it doesn't exist
-if ! docker images | grep -q "warp-terminal"; then
+if ! docker images | grep -q "warp-docker"; then
     echo -e "${YELLOW}Building Warp Terminal Docker image...${NC}"
     docker build -t warp-terminal .
 fi
 
-# Run the container
+# Run the container with AMD64 platform for compatibility
 echo -e "${GREEN}Starting Warp Terminal container...${NC}"
 docker run -it --rm \
+    --platform linux/amd64 \
     --name warp-terminal \
-    -e DISPLAY=$IP:0 \
+    -e DISPLAY=host.docker.internal:0 \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -v "$HOME":/host-home:ro \
     --network host \
-    warp-terminal
+    djsd123/warp-docker
 
 # Clean up
-xhost -$IP
+xhost -host.docker.internal
 
 echo -e "${GREEN}Warp Terminal session ended${NC}"
